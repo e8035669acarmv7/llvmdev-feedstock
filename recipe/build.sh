@@ -25,8 +25,6 @@ if [[ "$CC_FOR_BUILD" != "" && "$CC_FOR_BUILD" != "$CC" ]]; then
   CMAKE_ARGS="${CMAKE_ARGS} -DCROSS_TOOLCHAIN_FLAGS_NATIVE=${NATIVE_FLAGS}"
 fi
 
-CMAKE_ARGS="${CMAKE_ARGS} -DLLVM_HOST_TRIPLE=${CONDA_TOOLCHAIN_HOST} -DLLVM_DEFAULT_TARGET_TRIPLE=${CONDA_TOOLCHAIN_HOST}"
-
 # disable -fno-plt due to https://bugs.llvm.org/show_bug.cgi?id=51863 due to some GCC bug
 if [[ "$target_platform" == "linux-ppc64le" ]]; then
   CFLAGS="$(echo $CFLAGS | sed 's/-fno-plt //g')"
@@ -37,12 +35,15 @@ cmake -DCMAKE_INSTALL_PREFIX="${PREFIX}" \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_LIBRARY_PATH="${PREFIX}" \
       -DLLVM_ENABLE_BACKTRACES=ON \
+      -DLLVM_ENABLE_DUMP=ON \
       -DLLVM_ENABLE_LIBEDIT=OFF \
       -DLLVM_ENABLE_LIBXML2=FORCE_ON \
       -DLLVM_ENABLE_RTTI=ON \
       -DLLVM_ENABLE_TERMINFO=OFF \
       -DLLVM_ENABLE_ZLIB=FORCE_ON \
       -DLLVM_ENABLE_ZSTD=FORCE_ON \
+      -DLLVM_DEFAULT_TARGET_TRIPLE=${CONDA_TOOLCHAIN_HOST} \
+      -DLLVM_HOST_TRIPLE=${CONDA_TOOLCHAIN_HOST} \
       -DLLVM_INCLUDE_BENCHMARKS=OFF \
       -DLLVM_INCLUDE_DOCS=OFF \
       -DLLVM_INCLUDE_EXAMPLES=OFF \
@@ -66,15 +67,17 @@ else
     export TEST_CPU_FLAG=""
 fi
 
-# if [[ "$CONDA_BUILD_CROSS_COMPILATION" != "1" ]]; then
-#   # bin/opt -S -vector-library=SVML $TEST_CPU_FLAG -O3 $RECIPE_DIR/numba-3016.ll | bin/FileCheck $RECIPE_DIR/numba-3016.ll || exit $?
-#
-#   if [[ "$target_platform" == linux* ]]; then
-#     ln -s $(which $CC) $BUILD_PREFIX/bin/gcc
-#   fi
-#
-#   ninja -j${CPU_COUNT} check-llvm
-#
-#   cd ../llvm/test
-#   python ../../build/bin/llvm-lit -vv Transforms ExecutionEngine Analysis CodeGen/X86
-# fi
+# should be [[ "$CONDA_BUILD_CROSS_COMPILATION" != "1" ]],
+# but osx builds time out when building & running test suite
+if [[ "$target_platform" == "linux-64" ]]; then
+  # bin/opt -S -vector-library=SVML $TEST_CPU_FLAG -O3 $RECIPE_DIR/numba-3016.ll | bin/FileCheck $RECIPE_DIR/numba-3016.ll || exit $?
+
+  if [[ "$target_platform" == linux* ]]; then
+    ln -s $(which $CC) $BUILD_PREFIX/bin/gcc
+  fi
+
+  ninja -j${CPU_COUNT} check-llvm
+
+  cd ../llvm/test
+  python ../../build/bin/llvm-lit -vv Transforms ExecutionEngine Analysis CodeGen/X86
+fi
