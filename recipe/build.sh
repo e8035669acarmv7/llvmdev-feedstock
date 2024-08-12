@@ -67,6 +67,30 @@ else
     export TEST_CPU_FLAG=""
 fi
 
+
+# Cannot pass some test in armv7 device
+# Failed Tests (4):
+#   LLVM :: CodeGen/RISCV/attributes.ll
+#   LLVM :: CodeGen/RISCV/rvv/combine-store-extract-crash.ll
+#   LLVM :: CodeGen/RISCV/xtheadmempair.ll
+#   LLVM :: tools/dsymutil/X86/DWARFLinkerParallel/odr-string.test
+#
+#
+# Testing Time: 7286.48s
+#
+# Total Discovered Tests: 58183
+#   Skipped          :    36 (0.06%)
+#   Unsupported      :  2139 (3.68%)
+#   Passed           : 55849 (95.99%)
+#   Expectedly Failed:   155 (0.27%)
+#   Failed           :     4 (0.01%)
+#
+# Issues:
+# 1. https://github.com/llvm/llvm-project/issues/91335
+# 2. https://github.com/llvm/llvm-project/issues/69455
+# 3. https://github.com/llvm/llvm-project/issues/62195
+
+
 # should be [[ "$CONDA_BUILD_CROSS_COMPILATION" != "1" ]],
 # but osx builds time out when building & running test suite
 if [[ "$target_platform" == "linux-64" ]]; then
